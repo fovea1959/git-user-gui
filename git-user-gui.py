@@ -39,6 +39,8 @@ class GitUserGui(object):
         self.set_function_data = set_function_data
 
         self.root = root = tk.Tk()
+        root.title('Global Git User Setter')
+        root.wm_iconbitmap(default='Git-Logo-2Color.ico')
         left = tk.Frame(root)
         left.pack( side=tk.LEFT)
 
@@ -56,36 +58,49 @@ class GitUserGui(object):
         right = tk.Frame(root)
         right.pack(side=tk.LEFT)
 
-        select_details_frame = tk.Frame(right)
-        select_details_frame.pack(side=tk.TOP)
+        #select_details_frame = tk.Frame(right)
+        #select_details_frame.pack(side=tk.TOP)
+        select_details_frame = right
 
         field_width = 60
 
-        tk.Label(select_details_frame, text="Name").grid(row=0, column=0, sticky=tk.E)
+        tk.Label(select_details_frame, text="Name").grid(row=0, column=0, sticky=tk.E+tk.N)
         self.selNameVar = tk.StringVar()
         name = tk.Entry(select_details_frame, textvariable=self.selNameVar, state=tk.DISABLED, width=field_width)
-        name.grid(row=0, column=1, sticky=tk.E)
+        name.grid(row=0, column=1, sticky=tk.E+tk.N)
 
-        tk.Label(select_details_frame, text="EMail").grid(row=1, column=0, sticky=tk.E)
+        tk.Label(select_details_frame, text="EMail").grid(row=5, column=0, sticky=tk.E+tk.N)
         self.selEmailVar = tk.StringVar()
         email= tk.Entry(select_details_frame, textvariable=self.selEmailVar, state=tk.DISABLED, width=field_width)
-        email.grid(row=1, column=1, sticky=tk.E)
+        email.grid(row=5, column=1, sticky=tk.E+tk.N)
 
-        b = tk.Button(right, text='Set', command=self.set_git)
-        b.pack(side=tk.TOP)
+        bframe = tk.Frame(right)
+        bframe.grid(row=15, column=0, columnspan=2, sticky=tk.E+tk.W+tk.N+tk.S)
+        tk.Grid.rowconfigure(right, 15, weight=1)
 
-        git_frame = tk.Frame(right)
-        git_frame.pack(side=tk.TOP)
+        b = tk.Button(bframe, text='Set', command=self.set_git)
+        b.pack()
+        #b.pack(side=tk.TOP)
 
-        tk.Label(git_frame, text="Current Git Name").grid(row=0, column=0, sticky=tk.E)
+        #git_frame = tk.Frame(right)
+        #git_frame.pack(side=tk.TOP)
+
+        git_frame = right
+
+
+
+        tk.Label(git_frame, text="Current Git Name").grid(row=20, column=0, sticky=tk.E+tk.S)
         self.gitNameVar = tk.StringVar()
         name = tk.Entry(git_frame, textvariable=self.gitNameVar, state=tk.DISABLED, width=field_width)
-        name.grid(row=0, column=1, sticky=tk.E)
+        name.grid(row=20, column=1, sticky=tk.E+tk.S)
 
-        tk.Label(git_frame, text="Current Git EMail").grid(row=1, column=0, sticky=tk.E)
+        tk.Label(git_frame, text="Current Git EMail").grid(row=25, column=0, sticky=tk.E+tk.S)
         self.gitEmailVar = tk.StringVar()
         email= tk.Entry(git_frame, textvariable=self.gitEmailVar, state=tk.DISABLED, width=field_width)
-        email.grid(row=1, column=1, sticky=tk.E)
+        email.grid(row=25, column=1, sticky=tk.E+tk.S)
+
+
+
 
         if len(user_info_list.users) > 0:
             # https://stackoverflow.com/questions/25415888/default-to-and-select-first-item-in-tkinter-listbox
