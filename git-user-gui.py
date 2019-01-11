@@ -2,14 +2,36 @@
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-import json, logging, subprocess
+import json, logging, subprocess, os
 
 import Tkinter as tk
 import tkMessageBox
 
+import tkSimpleDialog
+
+class MyDialog(tkSimpleDialog.Dialog):
+
+    def body(self, master):
+
+        tk.Label(master, text="Name:").grid(row=0)
+        tk.Label(master, text="EMail:").grid(row=1)
+
+        self.e1 = tk.Entry(master,width=40)
+        self.e2 = tk.Entry(master,width=40)
+
+        self.e1.grid(row=0, column=1)
+        self.e2.grid(row=1, column=1)
+        return self.e1 # initial focus
+
+    def apply(self):
+        first = self.e1.get()
+        second = self.e2.get()
+        self.result = first, second
+
 class SortedUserInfoList(object):
     def __init__ (self):
         self.users = []
+        self.dirty = False
         
     def clean (self, s):
         return s.lower().strip()
@@ -18,7 +40,14 @@ class SortedUserInfoList(object):
         e = { 'name': name, 'email': email, 'l_name': self.clean(name), 'l_email': self.clean(email),
               'label': name + " <" + email + ">"}
         self.users.append(e)
+        self.dirty = True
         self.sort()
+
+    def is_dirty(self):
+        return self.dirty
+
+    def clear_dirty(self):
+        self.dirty = False
 
     def find (self, name, email):
         lname = self.clean(name)
@@ -27,6 +56,10 @@ class SortedUserInfoList(object):
             if (e['l_name'], e['l_email']) == (lname, lemail):
                 return i
         return -1
+
+    def remove (self, index):
+        del self.users[index]
+        self.dirty = True
 
     def sort(self):
         self.users.sort (key = lambda e: e['l_name'])
@@ -54,10 +87,9 @@ class GitUserGui(object):
         scrollbar = tk.Scrollbar(listbox_frame)
         scrollbar.pack(side=tk.RIGHT, fill="y")
 
-        self.listbox = lb = tk.Listbox(listbox_frame, selectmode=tk.SINGLE, width=80, height=8)
+        self.listbox = lb = tk.Listbox(listbox_frame, selectmode=tk.SINGLE, width=60, height=8)
         lb.bind('<<ListboxSelect>>', self.listbox_select)
-        for i, entry in enumerate(self.user_info_list.users):
-            lb.insert (i+1, entry['label'])
+        self.fill_listbox()
         lb.pack(fill="y", expand=True)
 
         # attach listbox to scrollbar
@@ -83,7 +115,7 @@ class GitUserGui(object):
         git_frame.pack(anchor="s", side="bottom", fill="x", expand=False)
         git_frame.grid_columnconfigure(0, weight=1)
 
-        field_width = 60
+        field_width = 40
 
         tk.Label(select_details_frame, text="Name").grid(row=0, column=0, sticky="en")
         self.selNameVar = tk.StringVar()
@@ -118,6 +150,11 @@ class GitUserGui(object):
         # now root.geometry() returns valid size/placement
         root.minsize(root.winfo_width(), root.winfo_height())
 
+    def fill_listbox(self):
+        self.listbox.delete(0, tk.END)
+        for i, entry in enumerate(self.user_info_list.users):
+            self.listbox.insert (i+1, entry['label'])
+
     def kwargs_with_color (self, d, color):
         rv = dict(d)
         if self.rainbow:
@@ -149,10 +186,26 @@ class GitUserGui(object):
         self.update_fields(index=index)
 
     def plus_callback(self):
-        tkMessageBox.showinfo( "Hello Python", "+")
+        d = MyDialog(self.root)
+        logging.info ("dialog result: %s", d.result)
+        if d.result is not None:
+            (name, email) = d.result
+            self.user_info_list.add(name, email)
+            self.fill_listbox()
+            index = self.user_info_list.find(name, email)
+            if index < 0:
+                raise Exception('Cannot find what I just added')
+            self.listbox.select_set(index) #This only sets focus on the first item.
+            self.listbox.event_generate("<<ListboxSelect>>")
 
     def minus_callback(self):
-        tkMessageBox.showinfo( "Hello Python", "-")
+        index = self.listbox.curselection()[0]
+        self.user_info_list.remove(index)
+        self.fill_listbox()
+        if index >= len(self.user_info_list.users):
+            index = len(self.user_info_list.users) - 1
+        self.listbox.select_set(index) #This only sets focus on the first item.
+        self.listbox.event_generate("<<ListboxSelect>>")
 
     def go(self):
         self.update_fields()
@@ -186,12 +239,17 @@ def main():
     email = git_command(git, ['config', '--global', '--get', 'user.email']).strip()
     logging.info ('current name:%s email:%s', name, email)
 
-    with open('git-user-gui.json', 'r') as json_file:
+    json_file_name = 'git-user-gui.json'
+    json_tempfile_name = 'git-user-gui.tmp'  # type: str
+
+    with open(json_file_name, 'r') as json_file:
         raw_data = json.load (json_file)
 
     users = SortedUserInfoList()
     for e in raw_data:
         users.add (e['name'], e['email'])
+
+    # users.clear_dirty()
 
     index = users.find (name, email)
     if index < 0:
@@ -204,6 +262,27 @@ def main():
     g = GitUserGui(users, index, set_function, set_function_data)
     g.set_current(name, email)
     g.go()
+
+    if users.dirty:
+        out = []
+        for u in users.users:
+            e = {"name": u['name'], 'email': u['email']}
+            out.append(e)
+
+        if os.path.exists(json_tempfile_name):
+            logging.info ("removing %s", json_tempfile_name)
+            os.remove(json_tempfile_name)
+
+        with open(json_tempfile_name, 'w') as json_file:
+            logging.info ("writing %s", json_tempfile_name)
+            json.dump (out, json_file, sort_keys=True, indent=1, separators=(',', ': '))
+
+        if os.path.exists(json_file_name):
+            logging.info ("removing %s", json_file_name)
+            os.remove(json_file_name)
+
+        logging.info ('renaming %s to %s', json_tempfile_name, json_file_name)
+        os.rename (json_tempfile_name, json_file_name)
 
 if __name__ == '__main__':
     main()

@@ -1,11 +1,38 @@
 [
-  {"name": "Drew Kelleher", "email": "DrewKelleher6@gmail.com"},
-  {"name": "Horacio Moreno", "email": "yayin1111@gmail.com"},
-  {"name": "Cameron Haynes", "email": "chaynes2019@gmail.com"},
-  {"name": "Nick Zimanski", "email": "nick.zimanski@gmail.com"},
-  {"name": "Dashiel Matlock", "email":  "533237@stjoebears.com"},
-  {"name": "Will Fisbeck", "email":  "527127@stjoebears.com"},
-  {"name": "Bobby Sundy", "email":  "robertschool3@gmail.com"},
-  {"name": "Doug Wegscheid", "email": "dwegscheid@sbcglobal.net"},
-  {"name": "Tearesa Wegscheid", "email": "tearesalwegscheid@gmail.com"}
+ {
+  "email": "robertschool3@gmail.com",
+  "name": "Bobby Sundy"
+ },
+ {
+  "email": "chaynes2019@gmail.com",
+  "name": "Cameron Haynes"
+ },
+ {
+  "email": "533237@stjoebears.com",
+  "name": "Dashiel Matlock"
+ },
+ {
+  "email": "dwegscheid@sbcglobal.net",
+  "name": "Doug Wegscheid"
+ },
+ {
+  "email": "DrewKelleher6@gmail.com",
+  "name": "Drew Kelleher"
+ },
+ {
+  "email": "yayin1111@gmail.com",
+  "name": "Horacio Moreno"
+ },
+ {
+  "email": "nick.zimanski@gmail.com",
+  "name": "Nick Zimanski"
+ },
+ {
+  "email": "tearesalwegscheid@gmail.com",
+  "name": "Tearesa Wegscheid"
+ },
+ {
+  "email": "527127@stjoebears.com",
+  "name": "Will Fisbeck"
+ }
 ]
