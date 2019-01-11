@@ -1,7 +1,11 @@
 [
-  {"name":  "Drew Kelleher", "email": "DrewKelleher6@gmail.com"},
+  {"name": "Drew Kelleher", "email": "DrewKelleher6@gmail.com"},
+  {"name": "Horacio Moreno", "email": "yayin1111@gmail.com"},
+  {"name": "Cameron Haynes", "email": "chaynes2019@gmail.com"},
   {"name": "Nick Zimanski", "email": "nick.zimanski@gmail.com"},
-  {"name":  "Dashiel Matlock", "email":  "533237@stjoebears.com"},
-  {"name": "Doug Wegscheid", "email": "dwegscheid@sbcglobal.net", "permanent": true},
-  {"name": "Tearesa Wegscheid", "email": "tearesalwegscheid@gmail.com", "permanent": true}
+  {"name": "Dashiel Matlock", "email":  "533237@stjoebears.com"},
+  {"name": "Will Fisbeck", "email":  "527127@stjoebears.com"},
+  {"name": "Bobby Sundy", "email":  "robertschool3@gmail.com"},
+  {"name": "Doug Wegscheid", "email": "dwegscheid@sbcglobal.net"},
+  {"name": "Tearesa Wegscheid", "email": "tearesalwegscheid@gmail.com"}
 ]

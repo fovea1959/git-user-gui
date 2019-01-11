@@ -44,7 +44,7 @@ class GitUserGui(object):
         left = tk.Frame(root)
         left.pack( side=tk.LEFT)
 
-        self.listbox = lb = tk.Listbox(left, selectmode=tk.SINGLE, width=80)
+        self.listbox = lb = tk.Listbox(left, selectmode=tk.SINGLE, width=80, height=5)
         lb.bind('<<ListboxSelect>>', self.listbox_select)
         for i, entry in enumerate(self.user_info_list.users):
             lb.insert (i+1, entry['label'])
@@ -55,39 +55,34 @@ class GitUserGui(object):
         minus = tk.Button(left, text='-', command=self.minus_callback)
         minus.pack(side=tk.LEFT)
 
-        right = tk.Frame(root)
-        right.pack(side=tk.LEFT)
+        right = tk.Frame(root, background="bisque")
+        right.pack(side=tk.LEFT, fill="both", expand=True)
 
-        #select_details_frame = tk.Frame(right)
-        #select_details_frame.pack(side=tk.TOP)
-        select_details_frame = right
+        select_details_frame = tk.Frame(right, background="red")
+        select_details_frame.pack(anchor="n", side="top", fill="x", expand=False)
+        select_details_frame.grid_columnconfigure(0, weight=1)
+
+        bframe = tk.Frame(right, background="green")
+        bframe.pack(fill="both", expand=True)
+
+        git_frame = tk.Frame(right, background="blue")
+        git_frame.pack(anchor="s", side="bottom", fill="x", expand=False)
+        git_frame.grid_columnconfigure(0, weight=1)
 
         field_width = 60
 
-        tk.Label(select_details_frame, text="Name").grid(row=0, column=0, sticky=tk.E+tk.N)
+        tk.Label(select_details_frame, text="Name").grid(row=0, column=0, sticky="en")
         self.selNameVar = tk.StringVar()
         name = tk.Entry(select_details_frame, textvariable=self.selNameVar, state=tk.DISABLED, width=field_width)
-        name.grid(row=0, column=1, sticky=tk.E+tk.N)
+        name.grid(row=0, column=1, sticky="en")
 
-        tk.Label(select_details_frame, text="EMail").grid(row=5, column=0, sticky=tk.E+tk.N)
+        tk.Label(select_details_frame, text="EMail").grid(row=5, column=0, sticky="en")
         self.selEmailVar = tk.StringVar()
         email= tk.Entry(select_details_frame, textvariable=self.selEmailVar, state=tk.DISABLED, width=field_width)
-        email.grid(row=5, column=1, sticky=tk.E+tk.N)
-
-        bframe = tk.Frame(right)
-        bframe.grid(row=15, column=0, columnspan=2, sticky=tk.E+tk.W+tk.N+tk.S)
-        tk.Grid.rowconfigure(right, 15, weight=1)
+        email.grid(row=5, column=1, sticky="en")
 
         b = tk.Button(bframe, text='Set', command=self.set_git)
-        b.pack()
-        #b.pack(side=tk.TOP)
-
-        #git_frame = tk.Frame(right)
-        #git_frame.pack(side=tk.TOP)
-
-        git_frame = right
-
-
+        b.pack(fill="none", expand=True)
 
         tk.Label(git_frame, text="Current Git Name").grid(row=20, column=0, sticky=tk.E+tk.S)
         self.gitNameVar = tk.StringVar()
