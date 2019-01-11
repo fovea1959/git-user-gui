@@ -38,34 +38,48 @@ class GitUserGui(object):
         self.set_function = set_function
         self.set_function_data = set_function_data
 
+        self.rainbow = False
+
         self.root = root = tk.Tk()
         root.title('Global Git User Setter')
         root.wm_iconbitmap(default='Git-Logo-2Color.ico')
-        left = tk.Frame(root)
-        left.pack( side=tk.LEFT)
+        left = tk.Frame(root, self.kwargs_with_color({}, "cornsilk"))
+        left.pack( side=tk.LEFT, fill="both", expand=True)
 
-        self.listbox = lb = tk.Listbox(left, selectmode=tk.SINGLE, width=80, height=5)
+        listbox_frame = tk.Frame(left, self.kwargs_with_color({}, "orange"))
+        listbox_frame.pack(fill="both", expand=True)
+        button_frame = tk.Frame(left, self.kwargs_with_color({"height": 30}, "red"))
+        button_frame.pack(fill="both")
+
+        scrollbar = tk.Scrollbar(listbox_frame)
+        scrollbar.pack(side=tk.RIGHT, fill="y")
+
+        self.listbox = lb = tk.Listbox(listbox_frame, selectmode=tk.SINGLE, width=80, height=8)
         lb.bind('<<ListboxSelect>>', self.listbox_select)
         for i, entry in enumerate(self.user_info_list.users):
             lb.insert (i+1, entry['label'])
-        lb.pack()
+        lb.pack(fill="y", expand=True)
 
-        plus = tk.Button(left, text='+', command=self.plus_callback)
+        # attach listbox to scrollbar
+        lb.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=lb.yview)
+
+        plus = tk.Button(button_frame, text='+', command=self.plus_callback)
         plus.pack(side=tk.LEFT)
-        minus = tk.Button(left, text='-', command=self.minus_callback)
+        minus = tk.Button(button_frame, text='-', command=self.minus_callback)
         minus.pack(side=tk.LEFT)
 
-        right = tk.Frame(root, background="bisque")
+        right = tk.Frame(root, self.kwargs_with_color({}, "bisque"))
         right.pack(side=tk.LEFT, fill="both", expand=True)
 
-        select_details_frame = tk.Frame(right, background="red")
+        select_details_frame = tk.Frame(right, self.kwargs_with_color({}, "red"))
         select_details_frame.pack(anchor="n", side="top", fill="x", expand=False)
         select_details_frame.grid_columnconfigure(0, weight=1)
 
-        bframe = tk.Frame(right, background="green")
+        bframe = tk.Frame(right, self.kwargs_with_color({}, "green"))
         bframe.pack(fill="both", expand=True)
 
-        git_frame = tk.Frame(right, background="blue")
+        git_frame = tk.Frame(right, self.kwargs_with_color({}, "blue"))
         git_frame.pack(anchor="s", side="bottom", fill="x", expand=False)
         git_frame.grid_columnconfigure(0, weight=1)
 
@@ -94,19 +108,21 @@ class GitUserGui(object):
         email= tk.Entry(git_frame, textvariable=self.gitEmailVar, state=tk.DISABLED, width=field_width)
         email.grid(row=25, column=1, sticky=tk.E+tk.S)
 
-
-
-
         if len(user_info_list.users) > 0:
             # https://stackoverflow.com/questions/25415888/default-to-and-select-first-item-in-tkinter-listbox
             self.listbox.select_set(current) #This only sets focus on the first item.
             self.listbox.event_generate("<<ListboxSelect>>")
 
-        # root.bind('<Return>', (lambda event, e=ents: fetch(e)))
-        #b1 = tk.Button(right, text='Show', command=(lambda e=ents: fetch(e)))
-        #b1.pack(side=tk.LEFT, padx=5, pady=5)
-        #b2 = Button(right, text='Quit', command=root.quit)
-        #b2.pack(side=tk.LEFT, padx=5, pady=5)
+        # https://stackoverflow.com/questions/10448882/how-do-i-set-a-minimum-window-size-in-tkinter
+        root.update()
+        # now root.geometry() returns valid size/placement
+        root.minsize(root.winfo_width(), root.winfo_height())
+
+    def kwargs_with_color (self, d, color):
+        rv = dict(d)
+        if self.rainbow:
+            rv["background"] = color
+        return rv
 
     def set_git(self):
         logging.info('setGit called')
