@@ -267,7 +267,9 @@ def default_json():
  {
   "email": "527127@stjoebears.com",
   "name": "Will Fisbeck"
- }
+ },
+  "email": "pizzaprice6@gmail.com",
+  "name": "Levi Price"
 ]
     """
 
