@@ -230,6 +230,47 @@ def git_command(git, cmd):
     rv = subprocess.check_output (local_cmd)
     return rv
 
+def default_json():
+    return """[
+ {
+  "email": "robertschool3@gmail.com",
+  "name": "Bobby Sundy"
+ },
+ {
+  "email": "chaynes2019@gmail.com",
+  "name": "Cameron Haynes"
+ },
+ {
+  "email": "533237@stjoebears.com",
+  "name": "Dashiel Matlock"
+ },
+ {
+  "email": "dwegscheid@sbcglobal.net",
+  "name": "Doug Wegscheid"
+ },
+ {
+  "email": "DrewKelleher6@gmail.com",
+  "name": "Drew Kelleher"
+ },
+ {
+  "email": "yayin1111@gmail.com",
+  "name": "Horacio Moreno"
+ },
+ {
+  "email": "nick.zimanski@gmail.com",
+  "name": "Nick Zimanski"
+ },
+ {
+  "email": "tearesalwegscheid@gmail.com",
+  "name": "Tearesa Wegscheid"
+ },
+ {
+  "email": "527127@stjoebears.com",
+  "name": "Will Fisbeck"
+ }
+]
+    """
+
 def main():
     logging.basicConfig(level=logging.INFO)
 
@@ -242,14 +283,18 @@ def main():
     json_file_name = 'git-user-gui.json'
     json_tempfile_name = 'git-user-gui.tmp'  # type: str
 
-    with open(json_file_name, 'r') as json_file:
-        raw_data = json.load (json_file)
+    if os.path.exists(json_file_name):
+        with open(json_file_name, 'r') as json_file:
+            raw_data = json.load (json_file)
+    else:
+        logging.info ("file %s does not exist, load defaults", json_file_name)
+        raw_data = json.loads(default_json())
 
     users = SortedUserInfoList()
     for e in raw_data:
         users.add (e['name'], e['email'])
 
-    # users.clear_dirty()
+    users.clear_dirty()
 
     index = users.find (name, email)
     if index < 0:
