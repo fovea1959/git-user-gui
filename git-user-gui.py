@@ -12,7 +12,6 @@ import tkSimpleDialog
 class MyDialog(tkSimpleDialog.Dialog):
 
     def body(self, master):
-
         tk.Label(master, text="Name:").grid(row=0)
         tk.Label(master, text="EMail:").grid(row=1)
 
@@ -190,6 +189,8 @@ class GitUserGui(object):
         logging.info ("dialog result: %s", d.result)
         if d.result is not None:
             (name, email) = d.result
+            name = name.strip()
+            email = email.strip()
             self.user_info_list.add(name, email)
             self.fill_listbox()
             index = self.user_info_list.find(name, email)
@@ -200,12 +201,15 @@ class GitUserGui(object):
 
     def minus_callback(self):
         index = self.listbox.curselection()[0]
-        self.user_info_list.remove(index)
-        self.fill_listbox()
-        if index >= len(self.user_info_list.users):
-            index = len(self.user_info_list.users) - 1
-        self.listbox.select_set(index) #This only sets focus on the first item.
-        self.listbox.event_generate("<<ListboxSelect>>")
+        e = self.user_info_list.users[index]
+        answer = tkMessageBox.askyesno("Remove user", "Do you want to remove user {0}?".format(e['label']))
+        if answer:
+            self.user_info_list.remove(index)
+            self.fill_listbox()
+            if index >= len(self.user_info_list.users):
+                index = len(self.user_info_list.users) - 1
+            self.listbox.select_set(index) #This only sets focus on the first item.
+            self.listbox.event_generate("<<ListboxSelect>>")
 
     def go(self):
         self.update_fields()
@@ -268,8 +272,10 @@ def default_json():
   "email": "527127@stjoebears.com",
   "name": "Will Fisbeck"
  },
+ {
   "email": "pizzaprice6@gmail.com",
   "name": "Levi Price"
+ }
 ]
     """
 
