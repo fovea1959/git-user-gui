@@ -181,7 +181,7 @@ class GitUserGui(object):
         w = evt.widget
         index = int(w.curselection()[0])
         value = w.get(index)
-        print 'You selected item %d: "%s"' % (index, value)
+        logging.debug ('Selected item %d: "%s"', index, value)
         self.update_fields(index=index)
 
     def plus_callback(self):
@@ -288,8 +288,10 @@ def main():
     email = git_command(git, ['config', '--global', '--get', 'user.email']).strip()
     logging.info ('current name:%s email:%s', name, email)
 
-    json_file_name = 'git-user-gui.json'
-    json_tempfile_name = 'git-user-gui.tmp'  # type: str
+    home = os.path.expanduser("~")
+    logging.info ("home is %s", home)
+    json_file_name = os.path.join(home, 'git-user-gui.json')
+    json_tempfile_name = os.path.join(home, 'git-user-gui.tmp')  # type: str
 
     if os.path.exists(json_file_name):
         with open(json_file_name, 'r') as json_file:
