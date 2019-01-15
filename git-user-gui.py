@@ -162,7 +162,7 @@ class GitUserGui(object):
 
     def set_git(self):
         logging.info('setGit called')
-        index = self.listbox.curselection()[0]
+        index = int(self.listbox.curselection()[0])
         self.set_function (self, self.set_function_data, self.user_info_list.users[index])
 
     def set_current(self, name, email):
@@ -171,7 +171,7 @@ class GitUserGui(object):
 
     def update_fields(self, index=None):
         if index is None:
-            index = self.listbox.curselection()[0]
+            index = int(self.listbox.curselection()[0])
         self.selNameVar.set(self.user_info_list.users[index].get('name', '???'))
         self.selEmailVar.set(self.user_info_list.users[index].get('email', '???'))
 
@@ -200,7 +200,7 @@ class GitUserGui(object):
             self.listbox.event_generate("<<ListboxSelect>>")
 
     def minus_callback(self):
-        index = self.listbox.curselection()[0]
+        index = int(self.listbox.curselection()[0])
         e = self.user_info_list.users[index]
         answer = tkMessageBox.askyesno("Remove user", "Do you want to remove user {0}?".format(e['label']))
         if answer:
@@ -231,8 +231,12 @@ def set_function(g, set_function_data, entry):
 def git_command(git, cmd):
     local_cmd = list(git)
     local_cmd.extend(cmd)
-    rv = subprocess.check_output (local_cmd)
-    return rv
+    try:
+        rv = subprocess.check_output (local_cmd)
+        return rv
+    except subprocess.CalledProcessError as ex:
+        logging.exception ("trouble running %s", str(local_cmd))
+        return ""
 
 def default_json():
     return """[
@@ -306,12 +310,15 @@ def main():
 
     users.clear_dirty()
 
-    index = users.find (name, email)
-    if index < 0:
-        users.add (name, email)
+    if name is not "" or email is not "":
         index = users.find (name, email)
         if index < 0:
-            raise Exception ('Cannot find what I just added')
+            users.add (name, email)
+            index = users.find (name, email)
+            if index < 0:
+                raise Exception ('Cannot find what I just added')
+    else:
+        index = 0
 
     set_function_data = { "git": git }
     g = GitUserGui(users, index, set_function, set_function_data)
