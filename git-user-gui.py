@@ -241,12 +241,12 @@ def git_command(git, cmd):
 def default_json():
     return """[
  {
-  "email": "robertschool3@gmail.com",
-  "name": "Bobby Sundy"
+  "email": "aagaishin@gmail.com",
+  "name": "Ashton Gaishin"
  },
  {
-  "email": "chaynes2019@gmail.com",
-  "name": "Cameron Haynes"
+  "email": "charliev999@gmail.com",
+  "name": "Charlie Vaughn"
  },
  {
   "email": "533237@stjoebears.com",
@@ -261,12 +261,40 @@ def default_json():
   "name": "Drew Kelleher"
  },
  {
+  "email": "13320@stjoebears.com",
+  "name": "Ethan Estes"
+ },
+ {
+  "email": "536056@stjoebears.com",
+  "name": "Greydon Dean"
+ },
+ {
   "email": "yayin1111@gmail.com",
   "name": "Horacio Moreno"
  },
  {
+  "email": "jlspartan13@gmail.com",
+  "name": "Justin Leany"
+ },
+ {
+  "email": "15163@stjoebears.com",
+  "name": "Liam Allen"
+ },
+ {
+  "email": "537834@stjoebears.com",
+  "name": "Micah Wagoner"
+ },
+ {
   "email": "nick.zimanski@gmail.com",
   "name": "Nick Zimanski"
+ },
+ {
+  "email": "532377@stjoebears.com",
+  "name": "Noah Dressander"
+ },
+ {
+  "email": "sthursbyg@gmail.com",
+  "name": "Sean Thursby"
  },
  {
   "email": "tearesalwegscheid@gmail.com",
@@ -275,13 +303,8 @@ def default_json():
  {
   "email": "527127@stjoebears.com",
   "name": "Will Fisbeck"
- },
- {
-  "email": "pizzaprice6@gmail.com",
-  "name": "Levi Price"
  }
-]
-    """
+]"""
 
 def main():
     logging.basicConfig(level=logging.INFO)
