@@ -1,15 +1,14 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 import json, logging, subprocess, os
 
-import Tkinter as tk
-import tkMessageBox
+import tkinter as tk
 
-import tkSimpleDialog
+import tkinter.simpledialog
 
-class MyDialog(tkSimpleDialog.Dialog):
+class MyDialog(tk.simpledialog.Dialog):
 
     def body(self, master):
         tk.Label(master, text="Name:").grid(row=0)
@@ -202,7 +201,7 @@ class GitUserGui(object):
     def minus_callback(self):
         index = int(self.listbox.curselection()[0])
         e = self.user_info_list.users[index]
-        answer = tkMessageBox.askyesno("Remove user", "Do you want to remove user {0}?".format(e['label']))
+        answer = tkinter.messagebox.askyesno("Remove user", "Do you want to remove user {0}?".format(e['label']))
         if answer:
             self.user_info_list.remove(index)
             self.fill_listbox()
@@ -232,7 +231,7 @@ def git_command(git, cmd):
     local_cmd = list(git)
     local_cmd.extend(cmd)
     try:
-        rv = subprocess.check_output (local_cmd)
+        rv = subprocess.check_output (local_cmd).decode()
         return rv
     except subprocess.CalledProcessError as ex:
         logging.exception ("trouble running %s", str(local_cmd))
@@ -240,18 +239,6 @@ def git_command(git, cmd):
 
 def default_json():
     return """[
- {
-  "email": "aagaishin@gmail.com",
-  "name": "Ashton Gaishin"
- },
- {
-  "email": "charliev999@gmail.com",
-  "name": "Charlie Vaughn"
- },
- {
-  "email": "533237@stjoebears.com",
-  "name": "Dashiel Matlock"
- },
  {
   "email": "dwegscheid@sbcglobal.net",
   "name": "Doug Wegscheid"
@@ -261,48 +248,8 @@ def default_json():
   "name": "Drew Kelleher"
  },
  {
-  "email": "13320@stjoebears.com",
-  "name": "Ethan Estes"
- },
- {
-  "email": "536056@stjoebears.com",
-  "name": "Greydon Dean"
- },
- {
-  "email": "yayin1111@gmail.com",
-  "name": "Horacio Moreno"
- },
- {
-  "email": "jlspartan13@gmail.com",
-  "name": "Justin Leany"
- },
- {
   "email": "15163@stjoebears.com",
   "name": "Liam Allen"
- },
- {
-  "email": "537834@stjoebears.com",
-  "name": "Micah Wagoner"
- },
- {
-  "email": "nick.zimanski@gmail.com",
-  "name": "Nick Zimanski"
- },
- {
-  "email": "532377@stjoebears.com",
-  "name": "Noah Dressander"
- },
- {
-  "email": "sthursbyg@gmail.com",
-  "name": "Sean Thursby"
- },
- {
-  "email": "tearesalwegscheid@gmail.com",
-  "name": "Tearesa Wegscheid"
- },
- {
-  "email": "527127@stjoebears.com",
-  "name": "Will Fisbeck"
  }
 ]"""
 
@@ -333,7 +280,7 @@ def main():
 
     users.clear_dirty()
 
-    if name is not "" or email is not "":
+    if name != "" or email != "":
         index = users.find (name, email)
         if index < 0:
             users.add (name, email)
