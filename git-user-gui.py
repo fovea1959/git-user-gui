@@ -2,11 +2,14 @@
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-import json, logging, subprocess, os
-
+import argparse
+import json
+import logging
+import os
+import subprocess
 import tkinter as tk
-
 import tkinter.simpledialog
+
 
 class MyDialog(tk.simpledialog.Dialog):
 
@@ -14,29 +17,32 @@ class MyDialog(tk.simpledialog.Dialog):
         tk.Label(master, text="Name:").grid(row=0)
         tk.Label(master, text="EMail:").grid(row=1)
 
-        self.e1 = tk.Entry(master,width=40)
-        self.e2 = tk.Entry(master,width=40)
+        self.e1 = tk.Entry(master, width=40)
+        self.e2 = tk.Entry(master, width=40)
 
         self.e1.grid(row=0, column=1)
         self.e2.grid(row=1, column=1)
-        return self.e1 # initial focus
+        return self.e1  # initial focus
 
     def apply(self):
         first = self.e1.get()
         second = self.e2.get()
         self.result = first, second
 
+
 class SortedUserInfoList(object):
-    def __init__ (self):
+
+    def __init__(self):
         self.users = []
         self.dirty = False
-        
-    def clean (self, s):
+
+    @staticmethod
+    def clean(s):
         return s.lower().strip()
 
-    def add (self, name, email):
-        e = { 'name': name, 'email': email, 'l_name': self.clean(name), 'l_email': self.clean(email),
-              'label': name + " <" + email + ">"}
+    def add(self, name, email):
+        e = {'name': name, 'email': email, 'l_name': self.clean(name), 'l_email': self.clean(email),
+             'label': name + " <" + email + ">"}
         self.users.append(e)
         self.dirty = True
         self.sort()
@@ -47,27 +53,31 @@ class SortedUserInfoList(object):
     def clear_dirty(self):
         self.dirty = False
 
-    def find (self, name, email):
+    def find(self, name, email):
         lname = self.clean(name)
         lemail = self.clean(email)
         for i, e in enumerate(self.users):
             if (e['l_name'], e['l_email']) == (lname, lemail):
                 return i
-        return -1
+        return None
 
-    def remove (self, index):
+    def remove(self, index):
         del self.users[index]
         self.dirty = True
 
-    def sort(self):
-        self.users.sort (key = lambda e: e['l_name'])
+    def get(self, index):
+        return self.users[index]
 
-class GitUserGui(object):
-    def __init__ (self, user_info_list, current, set_function, set_function_data):
+    def sort(self):
+        self.users.sort(key=lambda e: e['l_name'])
+
+
+class GitUserGui:
+    def __init__(self, user_info_list, current, git_facade):
         self.user_info_list = user_info_list
         self.current = current
-        self.set_function = set_function
-        self.set_function_data = set_function_data
+        self.git_facade = git_facade
+        self.logger = logging.getLogger(type(self).__name__)
 
         self.rainbow = False
 
@@ -75,7 +85,7 @@ class GitUserGui(object):
         root.title('Global Git User Setter')
         root.wm_iconbitmap(default='Git-Logo-2Color.ico')
         left = tk.Frame(root, self.kwargs_with_color({}, "cornsilk"))
-        left.pack( side=tk.LEFT, fill="both", expand=True)
+        left.pack(side=tk.LEFT, fill="both", expand=True)
 
         listbox_frame = tk.Frame(left, self.kwargs_with_color({}, "orange"))
         listbox_frame.pack(fill="both", expand=True)
@@ -122,7 +132,7 @@ class GitUserGui(object):
 
         tk.Label(select_details_frame, text="EMail").grid(row=5, column=0, sticky="en")
         self.selEmailVar = tk.StringVar()
-        email= tk.Entry(select_details_frame, textvariable=self.selEmailVar, state=tk.DISABLED, width=field_width)
+        email = tk.Entry(select_details_frame, textvariable=self.selEmailVar, state=tk.DISABLED, width=field_width)
         email.grid(row=5, column=1, sticky="en")
 
         b = tk.Button(bframe, text='Set', command=self.set_git)
@@ -135,12 +145,16 @@ class GitUserGui(object):
 
         tk.Label(git_frame, text="Current Git EMail").grid(row=25, column=0, sticky=tk.E+tk.S)
         self.gitEmailVar = tk.StringVar()
-        email= tk.Entry(git_frame, textvariable=self.gitEmailVar, state=tk.DISABLED, width=field_width)
+        email = tk.Entry(git_frame, textvariable=self.gitEmailVar, state=tk.DISABLED, width=field_width)
         email.grid(row=25, column=1, sticky=tk.E+tk.S)
+
+        if current is not None:
+            self.gitNameVar.set(user_info_list.get(current).get("name", ""))
+            self.gitEmailVar.set(user_info_list.get(current).get("email", ""))
 
         if len(user_info_list.users) > 0:
             # https://stackoverflow.com/questions/25415888/default-to-and-select-first-item-in-tkinter-listbox
-            self.listbox.select_set(current) #This only sets focus on the first item.
+            self.listbox.select_set(0 if current is None else current)  # This only sets focus on the first item.
             self.listbox.event_generate("<<ListboxSelect>>")
 
         # https://stackoverflow.com/questions/10448882/how-do-i-set-a-minimum-window-size-in-tkinter
@@ -151,41 +165,53 @@ class GitUserGui(object):
     def fill_listbox(self):
         self.listbox.delete(0, tk.END)
         for i, entry in enumerate(self.user_info_list.users):
-            self.listbox.insert (i+1, entry['label'])
+            self.listbox.insert(i+1, entry['label'])
 
-    def kwargs_with_color (self, d, color):
+    def kwargs_with_color(self, d, color):
         rv = dict(d)
         if self.rainbow:
             rv["background"] = color
         return rv
 
     def set_git(self):
-        logging.info('setGit called')
+        self.logger.info('set_git called')
         index = int(self.listbox.curselection()[0])
-        self.set_function (self, self.set_function_data, self.user_info_list.users[index])
+        entry = self.user_info_list.users[index]
+        name = entry['name']
+        email = entry['email']
+        (new_name, new_email) = self.git_facade.set_name_and_email(name, email)
+        self.update_git_name_and_email(new_name, new_email)
 
-    def set_current(self, name, email):
+    def update_git_name_and_email(self, name, email):
         self.gitNameVar.set(name)
         self.gitEmailVar.set(email)
 
-    def update_fields(self, index=None):
+    def update_selected_name_and_email(self, index=None):
         if index is None:
-            index = int(self.listbox.curselection()[0])
-        self.selNameVar.set(self.user_info_list.users[index].get('name', '???'))
-        self.selEmailVar.set(self.user_info_list.users[index].get('email', '???'))
+            self.selNameVar.set('')
+            self.selEmailVar.set('')
+        else:
+            self.selNameVar.set(self.user_info_list.users[index].get('name', '???'))
+            self.selEmailVar.set(self.user_info_list.users[index].get('email', '???'))
 
     # https://stackoverflow.com/questions/6554805/getting-a-callback-when-a-tkinter-listbox-selection-is-changed
     def listbox_select(self, evt):
         # Note here that Tkinter passes an event object to onselect()
         w = evt.widget
-        index = int(w.curselection()[0])
-        value = w.get(index)
-        logging.debug ('Selected item %d: "%s"', index, value)
-        self.update_fields(index=index)
+        curselection = w.curselection()
+        if len(curselection) == 0:
+            # this happens when filling in the dialog box
+            self.logger.info("listbox_select: nothing Selected")
+            self.update_selected_name_and_email(index=None)
+        else:
+            index = curselection[0]
+            value = w.get(index)
+            self.logger.debug('listbox_select: selected item %d: "%s"', index, value)
+            self.update_selected_name_and_email(index=index)
 
     def plus_callback(self):
         d = MyDialog(self.root)
-        logging.info ("dialog result: %s", d.result)
+        self.logger.info("dialog result: %s", d.result)
         if d.result is not None:
             (name, email) = d.result
             name = name.strip()
@@ -193,9 +219,9 @@ class GitUserGui(object):
             self.user_info_list.add(name, email)
             self.fill_listbox()
             index = self.user_info_list.find(name, email)
-            if index < 0:
+            if index is None:
                 raise Exception('Cannot find what I just added')
-            self.listbox.select_set(index) #This only sets focus on the first item.
+            self.listbox.select_set(index)  # This only sets focus on the first item.
             self.listbox.event_generate("<<ListboxSelect>>")
 
     def minus_callback(self):
@@ -207,35 +233,15 @@ class GitUserGui(object):
             self.fill_listbox()
             if index >= len(self.user_info_list.users):
                 index = len(self.user_info_list.users) - 1
-            self.listbox.select_set(index) #This only sets focus on the first item.
+            self.listbox.select_set(index)  # This only sets focus on the first item.
             self.listbox.event_generate("<<ListboxSelect>>")
 
     def go(self):
-        self.update_fields()
         self.root.mainloop()
 
     def quit(self):
         self.root.quit()
 
-def set_function(g, set_function_data, entry):
-    logging.info ("set_function: %s %s", set_function_data, entry)
-    git = set_function_data.get('git', 'echo')
-    git_command(git, ['config', '--global', 'user.name', entry['name']])
-    git_command(git, ['config', '--global', 'user.email', entry['email']])
-    name = git_command(git, ['config', '--global', '--get', 'user.name']).strip()
-    email = git_command(git, ['config', '--global', '--get', 'user.email']).strip()
-    logging.info ('current name:%s email:%s', name, email)
-    g.set_current(name, email)
-
-def git_command(git, cmd):
-    local_cmd = list(git)
-    local_cmd.extend(cmd)
-    try:
-        rv = subprocess.check_output (local_cmd).decode()
-        return rv
-    except subprocess.CalledProcessError as ex:
-        logging.exception ("trouble running %s", str(local_cmd))
-        return ""
 
 def default_json():
     return """[
@@ -253,47 +259,79 @@ def default_json():
  }
 ]"""
 
-def main():
-    logging.basicConfig(level=logging.INFO)
 
-    git = ['git']
+class GitFacade:
+    def __init__(self):
+        # change this to "echo" for testing
+        self.commands = ["git"]
+        self.logger = logging.getLogger(type(self).__name__)
 
-    name = git_command(git, ['config', '--global', '--get', 'user.name']).strip()
-    email = git_command(git, ['config', '--global', '--get', 'user.email']).strip()
-    logging.info ('current name:%s email:%s', name, email)
+    def do_command(self, cmd, check=True):
+        local_cmd = list(self.commands)
+        local_cmd.extend(cmd)
+        try:
+            r = subprocess.run(local_cmd, check=check, stdout=subprocess.PIPE)
+            self.logger.info("run %s returned %d", str(local_cmd), r.returncode)
+            return r.stdout.decode()
+
+        except subprocess.CalledProcessError:
+            self.logger.exception("trouble running %s", str(local_cmd))
+            return ""
+
+    def get_name_and_email(self, check=False):
+        name = self.do_command(['config', '--global', '--get', 'user.name'], check=check).strip()
+        email = self.do_command(['config', '--global', '--get', 'user.email'], check=check).strip()
+        self.logger.info('current name:%s email:%s', name, email)
+        return name, email
+
+    def set_name_and_email(self, name, email):
+        self.logger.info("set_name_and_email: %s %s", name, email)
+        self.do_command(['config', '--global', 'user.name', name])
+        self.do_command(['config', '--global', 'user.email', email])
+        return self.get_name_and_email(check=True)
+
+    def clear_name_and_email(self):
+        self.logger.info("clear_name_and_email")
+        self.do_command(['config', '--global', '--unset', 'user.name'], check=False)
+        self.do_command(['config', '--global', '--unset', 'user.email'], check=False)
+        return self.get_name_and_email(check=False)
+
+
+def do_gui(git_facade):
+    name, email = git_facade.get_name_and_email(check=False)
+    logging.info('current name:%s email:%s', name, email)
 
     home = os.path.expanduser("~")
-    logging.info ("home is %s", home)
+    logging.info("home is %s", home)
     json_file_name = os.path.join(home, 'git-user-gui.json')
     json_tempfile_name = os.path.join(home, 'git-user-gui.tmp')  # type: str
 
     if os.path.exists(json_file_name):
         with open(json_file_name, 'r') as json_file:
-            raw_data = json.load (json_file)
+            raw_data = json.load(json_file)
     else:
-        logging.info ("file %s does not exist, load defaults", json_file_name)
+        logging.info("file %s does not exist, load defaults", json_file_name)
         raw_data = json.loads(default_json())
 
     users = SortedUserInfoList()
     for e in raw_data:
-        users.add (e['name'], e['email'])
+        users.add(e['name'], e['email'])
 
     users.clear_dirty()
 
     if name != "" or email != "":
-        index = users.find (name, email)
-        if index < 0:
-            users.add (name, email)
-            index = users.find (name, email)
-            if index < 0:
-                raise Exception ('Cannot find what I just added')
+        index = users.find(name, email)
+        if index is None:
+            users.add(name, email)
+            index = users.find(name, email)
+            if index is None:
+                raise Exception('Cannot find what I just added')
     else:
-        index = 0
+        index = None
 
-    set_function_data = { "git": git }
-    g = GitUserGui(users, index, set_function, set_function_data)
-    g.set_current(name, email)
-    g.go()
+    gui = GitUserGui(users, index, git_facade)
+    # g.set_current(name, email)
+    gui.go()
 
     if users.dirty:
         out = []
@@ -302,19 +340,36 @@ def main():
             out.append(e)
 
         if os.path.exists(json_tempfile_name):
-            logging.info ("removing %s", json_tempfile_name)
+            logging.info("removing %s", json_tempfile_name)
             os.remove(json_tempfile_name)
 
         with open(json_tempfile_name, 'w') as json_file:
-            logging.info ("writing %s", json_tempfile_name)
-            json.dump (out, json_file, sort_keys=True, indent=1, separators=(',', ': '))
+            logging.info("writing %s", json_tempfile_name)
+            json.dump(out, json_file, sort_keys=True, indent=1, separators=(',', ': '))
 
         if os.path.exists(json_file_name):
-            logging.info ("removing %s", json_file_name)
+            logging.info("removing %s", json_file_name)
             os.remove(json_file_name)
 
-        logging.info ('renaming %s to %s', json_tempfile_name, json_file_name)
-        os.rename (json_tempfile_name, json_file_name)
+        logging.info('renaming %s to %s', json_tempfile_name, json_file_name)
+        os.rename(json_tempfile_name, json_file_name)
+
+
+def main():
+    logging.basicConfig(level=logging.INFO)
+
+    parser = argparse.ArgumentParser(description='set up global git user.name and user.email')
+    parser.add_argument('--clear', action='store_true', help='clear the properties')
+    args = parser.parse_args()
+
+    git_facade = GitFacade()
+
+    if args.clear:
+        (name, email) = git_facade.clear_name_and_email()
+        logging.info("should be clear: name=%s email=%s", name, email)
+    else:
+        do_gui(git_facade)
+
 
 if __name__ == '__main__':
     main()
