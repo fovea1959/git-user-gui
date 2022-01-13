@@ -101,6 +101,7 @@ class GitUserGui:
 
         self.listbox = lb = tk.Listbox(listbox_frame, selectmode=tk.SINGLE, width=60, height=8)
         lb.bind('<<ListboxSelect>>', self.listbox_select)
+        lb.bind('<Double-1>', self.listbox_double_click)
         self.fill_listbox()
         lb.pack(fill="y", expand=True)
 
@@ -198,6 +199,18 @@ class GitUserGui:
             self.selNameVar.set(self.user_info_list.users[index].get('name', '???'))
             self.selEmailVar.set(self.user_info_list.users[index].get('email', '???'))
 
+    def listbox_double_click(self, evt):
+        w = evt.widget
+        curselection = w.curselection()
+        if len(curselection) == 0:
+            # don't know if this can happen. don't think so.
+            self.logger.info("listbox_double_click: nothing Selected")
+        else:
+            index = curselection[0]
+            value = w.get(index)
+            self.logger.info('listbox_double_click: selected item %d: "%s"', index, value)
+            self.set_git()
+
     # https://stackoverflow.com/questions/6554805/getting-a-callback-when-a-tkinter-listbox-selection-is-changed
     def listbox_select(self, evt):
         # Note here that Tkinter passes an event object to onselect()
@@ -210,11 +223,11 @@ class GitUserGui:
         else:
             index = curselection[0]
             value = w.get(index)
-            self.logger.debug('listbox_select: selected item %d: "%s"', index, value)
+            self.logger.info('listbox_select: selected item %d: "%s"', index, value)
             self.update_selected_name_and_email(index=index)
 
     def plus_callback(self):
-        d = MyDialog(self.root)
+        d = MyDialog(self.root, 'Add name and email')
         self.logger.info("dialog result: %s", d.result)
         if d.result is not None:
             (name, email) = d.result
