@@ -12,6 +12,10 @@ import tkinter.simpledialog
 
 
 class MyDialog(tk.simpledialog.Dialog):
+    def __init__(self, parent, title):
+        self.e1 = None
+        self.e2 = None
+        super().__init__(parent, title)
 
     def body(self, master):
         tk.Label(master, text="Name:").grid(row=0)
