@@ -143,6 +143,9 @@ class GitUserGui:
         b = tk.Button(bframe, text='Set', command=self.set_git)
         b.pack(fill="none", expand=True)
 
+        b = tk.Button(bframe, text='Clear', command=self.clear_git)
+        b.pack(fill="none", expand=True)
+
         tk.Label(git_frame, text="Current Git Name").grid(row=20, column=0, sticky=tk.E+tk.S)
         self.gitNameVar = tk.StringVar()
         name = tk.Entry(git_frame, textvariable=self.gitNameVar, state=tk.DISABLED, width=field_width)
@@ -185,6 +188,11 @@ class GitUserGui:
         name = entry['name']
         email = entry['email']
         (new_name, new_email) = self.git_facade.set_name_and_email(name, email)
+        self.update_git_name_and_email(new_name, new_email)
+
+    def clear_git(self):
+        self.logger.info('clear_git called')
+        (new_name, new_email) = self.git_facade.clear_name_and_email()
         self.update_git_name_and_email(new_name, new_email)
 
     def update_git_name_and_email(self, name, email):
