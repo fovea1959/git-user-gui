@@ -303,6 +303,17 @@ class GitFacade:
             self.logger.exception("trouble running %s", str(local_cmd))
             return ""
 
+    def set_autocrlf(self):
+        platform = os.name
+        # https://stackoverflow.com/a/31655272/17887564
+        setting = None
+        if platform == 'nt':
+            setting = 'true'
+        elif platform == 'posix':
+            setting = 'input'
+        if setting is not None:
+            self.do_command(['config', '--global', 'core.autocrlf', setting])
+
     def get_name_and_email(self, check=False):
         name = self.do_command(['config', '--global', '--get', 'user.name'], check=check).strip()
         email = self.do_command(['config', '--global', '--get', 'user.email'], check=check).strip()
@@ -391,7 +402,8 @@ def main():
 
     if args.clear:
         (name, email) = git_facade.clear_name_and_email()
-        logging.info("should be clear: name=%s email=%s", name, email)
+        logging.info("should be clear: name='%s' email='%s'", name, email)
+        git_facade.set_autocrlf()
     else:
         do_gui(git_facade)
 
