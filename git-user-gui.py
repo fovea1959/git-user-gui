@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
 import argparse
 import json
 import logging
 import os
 import subprocess
+import sys
 import tkinter as tk
 import tkinter.simpledialog
+import tkinter.messagebox
+import tkinter.filedialog
 
 
 class MyDialog(tk.simpledialog.Dialog):
     def __init__(self, parent, title):
         self.e1 = None
         self.e2 = None
+        self.result = None
         super().__init__(parent, title)
 
     def body(self, master):
@@ -34,8 +36,7 @@ class MyDialog(tk.simpledialog.Dialog):
         self.result = first, second
 
 
-class SortedUserInfoList(object):
-
+class SortedUserInfoList:
     def __init__(self):
         self.users = []
         self.dirty = False
@@ -45,11 +46,12 @@ class SortedUserInfoList(object):
         return s.lower().strip()
 
     def add(self, name, email):
-        e = {'name': name, 'email': email, 'l_name': self.clean(name), 'l_email': self.clean(email),
-             'label': name + " <" + email + ">"}
-        self.users.append(e)
-        self.dirty = True
-        self.sort()
+        if self.find(name, email) is None:
+            e = {'name': name, 'email': email, 'l_name': self.clean(name), 'l_email': self.clean(email),
+                 'label': name + " <" + email + ">"}
+            self.users.append(e)
+            self.dirty = True
+            self.sort()
 
     def is_dirty(self):
         return self.dirty
@@ -77,7 +79,7 @@ class SortedUserInfoList(object):
 
 
 class GitUserGui:
-    def __init__(self, user_info_list, current, git_facade):
+    def __init__(self, user_info_list: SortedUserInfoList, current, git_facade):
         self.user_info_list = user_info_list
         self.current = current
         self.git_facade = git_facade
@@ -99,7 +101,7 @@ class GitUserGui:
         scrollbar = tk.Scrollbar(listbox_frame)
         scrollbar.pack(side=tk.RIGHT, fill="y")
 
-        self.listbox = lb = tk.Listbox(listbox_frame, selectmode=tk.SINGLE, width=60, height=8)
+        self.listbox = lb = tk.Listbox(listbox_frame, selectmode=tk.SINGLE, width=60, height=8, activestyle='none')
         lb.bind('<<ListboxSelect>>', self.listbox_select)
         lb.bind('<Double-1>', self.listbox_double_click)
         self.fill_listbox()
@@ -112,6 +114,8 @@ class GitUserGui:
         plus = tk.Button(button_frame, text='+', command=self.plus_callback)
         plus.pack(side=tk.LEFT)
         minus = tk.Button(button_frame, text='-', command=self.minus_callback)
+        minus.pack(side=tk.LEFT)
+        minus = tk.Button(button_frame, text='++', command=self.plusplus_callback)
         minus.pack(side=tk.LEFT)
 
         right = tk.Frame(root, self.kwargs_with_color({}, "bisque"))
@@ -162,7 +166,9 @@ class GitUserGui:
 
         if len(user_info_list.users) > 0:
             # https://stackoverflow.com/questions/25415888/default-to-and-select-first-item-in-tkinter-listbox
-            self.listbox.select_set(0 if current is None else current)  # This only sets focus on the first item.
+            index = 0 if current is None else current
+            self.listbox.select_set(index)
+            self.listbox.see(index)
             self.listbox.event_generate("<<ListboxSelect>>")
 
         # https://stackoverflow.com/questions/10448882/how-do-i-set-a-minimum-window-size-in-tkinter
@@ -247,6 +253,7 @@ class GitUserGui:
             if index is None:
                 raise Exception('Cannot find what I just added')
             self.listbox.select_set(index)  # This only sets focus on the first item.
+            self.listbox.see(index)
             self.listbox.event_generate("<<ListboxSelect>>")
 
     def minus_callback(self):
@@ -259,6 +266,27 @@ class GitUserGui:
             if index >= len(self.user_info_list.users):
                 index = len(self.user_info_list.users) - 1
             self.listbox.select_set(index)  # This only sets focus on the first item.
+            self.listbox.see(index)
+            self.listbox.event_generate("<<ListboxSelect>>")
+
+    def plusplus_callback(self):
+        fn = tk.filedialog.askopenfilename(
+            parent=self.root,
+            title=".json file",
+            initialfile="git-user-gui.json",
+            filetypes=[(".json label", "*.json")]
+        )
+        if fn:
+            with open(fn, 'r') as json_file:
+                raw_data = json.load(json_file)
+            for e in raw_data:
+                self.user_info_list.add(e['name'], e['email'])
+            self.fill_listbox()
+            index = self.user_info_list.find(self.selNameVar.get(), self.selEmailVar.get())
+            if index is None:
+                raise Exception('Cannot find what was just there')
+            self.listbox.select_set(index)
+            self.listbox.see(index)
             self.listbox.event_generate("<<ListboxSelect>>")
 
     def go(self):
@@ -266,23 +294,6 @@ class GitUserGui:
 
     def quit(self):
         self.root.quit()
-
-
-def default_json():
-    return """[
- {
-  "email": "dwegscheid@sbcglobal.net",
-  "name": "Doug Wegscheid"
- },
- {
-  "email": "DrewKelleher6@gmail.com",
-  "name": "Drew Kelleher"
- },
- {
-  "email": "15163@stjoebears.com",
-  "name": "Liam Allen"
- }
-]"""
 
 
 class GitFacade:
@@ -340,14 +351,17 @@ def do_gui(git_facade):
     home = os.path.expanduser("~")
     logging.info("home is %s", home)
     json_file_name = os.path.join(home, 'git-user-gui.json')
-    json_tempfile_name = os.path.join(home, 'git-user-gui.tmp')  # type: str
+    json_tempfile_name = os.path.join(home, 'git-user-gui.tmp')
 
     if os.path.exists(json_file_name):
         with open(json_file_name, 'r') as json_file:
             raw_data = json.load(json_file)
     else:
-        logging.info("file %s does not exist, load defaults", json_file_name)
-        raw_data = json.loads(default_json())
+        script_directory = os.path.dirname(__file__)
+        default_file_name = os.path.join(script_directory, 'git-user-gui.json')
+        logging.info("file %s does not exist, loading defaults from %s", json_file_name, default_file_name)
+        with open(default_file_name, 'r') as json_file:
+            raw_data = json.load(json_file)
 
     users = SortedUserInfoList()
     for e in raw_data:
@@ -361,7 +375,8 @@ def do_gui(git_facade):
             users.add(name, email)
             index = users.find(name, email)
             if index is None:
-                raise Exception('Cannot find what I just added')
+                print(users.users)
+                raise Exception(f'Cannot find what I just added: {name} {email}')
     else:
         index = None
 
@@ -391,12 +406,12 @@ def do_gui(git_facade):
         os.rename(json_tempfile_name, json_file_name)
 
 
-def main():
+def main(argv):
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(description='set up global git user.name and user.email')
     parser.add_argument('--clear', action='store_true', help='clear the properties')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     git_facade = GitFacade()
 
@@ -409,4 +424,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
